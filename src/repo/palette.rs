@@ -95,6 +95,10 @@ impl RepoView {
                 items.push(cmd("Show History", Icon::History, Some("Ctrl+2"), |this, window, cx| this.set_nav(Nav::History, window, cx)));
                 items.push(cmd("Show Stashes", Icon::Stash, Some("Ctrl+3"), |this, window, cx| this.set_nav(Nav::Stashes, window, cx)));
                 items.push(cmd("Show Reflog", Icon::List, Some("Ctrl+4"), |this, window, cx| this.set_nav(Nav::Reflog, window, cx)));
+                if self.prs.repo.is_some() {
+                    items.push(cmd("Show Pull Requests", Icon::PullRequest, Some("Ctrl+5"), |this, window, cx| this.set_nav(Nav::PullRequests, window, cx)));
+                    items.push(cmd("Create Pull Request…", Icon::PullRequest, None, |this, window, cx| this.open_create_pull_request(window, cx)));
+                }
                 items.push(cmd("Stage All Changes", Icon::Plus, None, |this, _, cx| this.stage_all(cx)));
                 items.push(cmd("Unstage All Changes", Icon::Minus, None, |this, _, cx| this.unstage_all(cx)));
                 items.push(cmd("Add Remote…", Icon::Globe, None, |this, window, cx| this.open_add_remote(window, cx)));

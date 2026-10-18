@@ -57,6 +57,7 @@ pub enum Icon {
     Pencil,
     Dot,
     Globe,
+    PullRequest,
     DiffInline,
     DiffSplit,
     Image,
@@ -119,6 +120,7 @@ impl Icon {
             Icon::Pencil => "pencil",
             Icon::Dot => "dot",
             Icon::Globe => "globe",
+            Icon::PullRequest => "pull-request",
             Icon::DiffInline => "diff-inline",
             Icon::DiffSplit => "diff-split",
             Icon::Image => "image",
@@ -184,6 +186,7 @@ fn body(name: &str) -> Option<(&'static str, &'static str)> {
         "diff-inline" => (OPEN, r#"<rect x="2" y="2.4" width="12" height="11.2" rx="1.2"/><path d="M4.6 6h6.8M4.6 8h6.8M4.6 10h4.4"/>"#),
         "diff-split" => (OPEN, r#"<rect x="2" y="2.4" width="12" height="11.2" rx="1.2"/><path d="M8 2.4v11.2M4.2 6h2M4.2 8.4h2M9.8 6h2M9.8 8.4h2"/>"#),
         "image" => (OPEN, r#"<rect x="2" y="2.4" width="12" height="11.2" rx="1.2"/><circle cx="5.6" cy="6" r="1.1"/><path d="m2.4 12.2 3.6-3.6 2.4 2.4 1.8-1.8 3.4 3.4"/>"#),
+        "pull-request" => (OPEN, r#"<circle cx="4.5" cy="3.5" r="1.6"/><circle cx="4.5" cy="12.5" r="1.6"/><circle cx="11.5" cy="12.5" r="1.6"/><path d="M4.5 5.1v5.8M11.5 10.9V6.2a1.6 1.6 0 0 0-1.6-1.6H7.2"/><path d="M8.8 3 7.2 4.6l1.6 1.6"/>"#),
         _ => return None,
     })
 }

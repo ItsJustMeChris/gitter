@@ -29,6 +29,7 @@ pub enum ModalKind {
     Reset { oid: String, mode: ResetMode },
     Reword { oid: String, subject: Entity<TextInput>, body: Entity<TextInput> },
     Remote { old: Option<String>, name: Entity<TextInput>, url: Entity<TextInput> },
+    CreatePullRequest(Box<super::pull_requests::CreatePrForm>),
     Palette(PaletteState),
 }
 
@@ -39,7 +40,7 @@ pub struct Modal {
 }
 
 impl RepoView {
-    fn new_input(&self, placeholder: &str, text: &str, window: &mut Window, cx: &mut Context<Self>) -> (Entity<TextInput>, Subscription) {
+    pub fn new_input(&self, placeholder: &str, text: &str, window: &mut Window, cx: &mut Context<Self>) -> (Entity<TextInput>, Subscription) {
         let placeholder = placeholder.to_string();
         let text = text.to_string();
         let input = cx.new(|cx| TextInput::new(cx).with_placeholder(placeholder).with_text(text));
@@ -51,7 +52,7 @@ impl RepoView {
         (input, sub)
     }
 
-    fn show_modal(&mut self, kind: ModalKind, subs: Vec<Subscription>, focus_input: Option<&Entity<TextInput>>, window: &mut Window, cx: &mut Context<Self>) {
+    pub fn show_modal(&mut self, kind: ModalKind, subs: Vec<Subscription>, focus_input: Option<&Entity<TextInput>>, window: &mut Window, cx: &mut Context<Self>) {
         let focus = cx.focus_handle();
         match focus_input {
             Some(input) => {
@@ -402,6 +403,7 @@ impl RepoView {
                 self.modal = Some(modal);
                 self.run_palette_selection(window, cx);
             }
+            ModalKind::CreatePullRequest(_) => self.submit_create_pull_request(modal, window, cx),
         }
     }
 
@@ -669,6 +671,7 @@ impl RepoView {
                 div().flex().flex_col().gap(px(10.)).child(field_label("Name", cx)).child(name.clone()).child(field_label("URL", cx)).child(url.clone()).into_any_element(),
                 Some(self.footer(if old.is_some() { "Save" } else { "Add Remote" }, false, true, cx)),
             ),
+            ModalKind::CreatePullRequest(form) => self.render_create_pull_request(form, cx),
         };
 
         let viewport = window.viewport_size();
@@ -717,7 +720,7 @@ impl RepoView {
         )
     }
 
-    fn footer(&self, label: impl Into<SharedString>, danger: bool, cancel: bool, cx: &mut Context<Self>) -> AnyElement {
+    pub fn footer(&self, label: impl Into<SharedString>, danger: bool, cancel: bool, cx: &mut Context<Self>) -> AnyElement {
         let mut primary = Button::new("modal-primary", label).on_click(cx.listener(|this, _, window, cx| this.submit_modal(window, cx)));
         primary = if danger { primary.danger() } else { primary.primary() };
         div()

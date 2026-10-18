@@ -123,7 +123,7 @@ impl RepoView {
         cx.notify();
     }
 
-    fn split_view(&mut self, list: AnyElement, loc: DiffLocation, window: &mut Window, cx: &mut Context<Self>) -> AnyElement {
+    pub fn split_view(&mut self, list: AnyElement, loc: DiffLocation, window: &mut Window, cx: &mut Context<Self>) -> AnyElement {
         let split = self.history_split;
         div()
             .id(("split-view", loc as usize))

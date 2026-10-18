@@ -131,6 +131,9 @@ impl RepoView {
             rows.push(Row::Nav { id: "nav-history", label: "History", icon: Icon::History, nav: Nav::History, count: 0 });
             rows.push(Row::Nav { id: "nav-stashes", label: "Stashes", icon: Icon::Stash, nav: Nav::Stashes, count: self.snapshot.stashes.len() });
             rows.push(Row::Nav { id: "nav-reflog", label: "Reflog", icon: Icon::List, nav: Nav::Reflog, count: 0 });
+            if self.prs.repo.is_some() {
+                rows.push(Row::Nav { id: "nav-prs", label: "Pull Requests", icon: Icon::PullRequest, nav: Nav::PullRequests, count: self.prs.open_count.unwrap_or(0) });
+            }
         }
 
         let matches = |s: &str| filter.is_empty() || s.to_lowercase().contains(filter);

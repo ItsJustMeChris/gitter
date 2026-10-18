@@ -4,13 +4,14 @@ use super::diff_view::{DiffLocation, DiffMode, DiffState};
 use super::{RepoView, ToastKind};
 use crate::actions::{SelectNext, SelectPrev};
 use crate::assets::Icon;
-use crate::git::{short_oid, ChangedFile, CommitDetails, Oid, Stash};
+use crate::git::{short_oid, ChangedFile, CommitDetails, FileDiff, Oid, Stash};
 use crate::theme::{mono_font, ActiveTheme};
 use crate::ui::{self, empty_state, SplitDrag};
 use gpui::{
     div, prelude::*, px, relative, uniform_list, AnyElement, Context, DragMoveEvent, FocusHandle, MouseButton, ScrollHandle, ScrollStrategy, UniformListScrollHandle, Window,
 };
 use std::ops::Range;
+use std::sync::Arc;
 
 pub struct DetailState {
     pub oid: Option<Oid>,
@@ -19,6 +20,9 @@ pub struct DetailState {
     pub loading: bool,
     pub selected_file: Option<usize>,
     pub diff: Option<DiffState>,
+    /// Diffs that are already known (pull requests come with GitHub's diff),
+    /// used instead of asking git for each file.
+    pub prepared_diffs: Option<Arc<Vec<FileDiff>>>,
     pub files_scroll: UniformListScrollHandle,
     pub info_scroll: ScrollHandle,
     pub generation: u64,
@@ -35,6 +39,7 @@ impl DetailState {
             loading: false,
             selected_file: None,
             diff: None,
+            prepared_diffs: None,
             files_scroll: UniformListScrollHandle::new(),
             info_scroll: ScrollHandle::new(),
             generation: 0,
@@ -49,6 +54,7 @@ impl DetailState {
         self.details = None;
         self.selected_file = None;
         self.diff = None;
+        self.prepared_diffs = None;
         self.generation += 1;
     }
 }
@@ -59,6 +65,7 @@ impl RepoView {
             DiffLocation::History | DiffLocation::WorkingCopy => &self.history.detail,
             DiffLocation::Stash => &self.stash_view.detail,
             DiffLocation::Reflog => &self.reflog.detail,
+            DiffLocation::PullRequest => &self.prs.detail,
         }
     }
 
@@ -67,6 +74,7 @@ impl RepoView {
             DiffLocation::History | DiffLocation::WorkingCopy => &mut self.history.detail,
             DiffLocation::Stash => &mut self.stash_view.detail,
             DiffLocation::Reflog => &mut self.reflog.detail,
+            DiffLocation::PullRequest => &mut self.prs.detail,
         }
     }
 
@@ -136,6 +144,12 @@ impl RepoView {
         state.selected_file = Some(ix);
         state.files_scroll.scroll_to_item(ix, ScrollStrategy::Top);
         state.diff_generation += 1;
+        if let Some(diffs) = state.prepared_diffs.clone() {
+            let diff = diffs.iter().find(|d| d.path == file.path).cloned().unwrap_or_else(|| FileDiff::empty(&file.path));
+            state.diff = Some(DiffState::new(diff));
+            cx.notify();
+            return;
+        }
         let generation = state.diff_generation;
         let oid = details.oid.clone();
         let parent = details.parents.first().cloned();
@@ -189,8 +203,12 @@ impl RepoView {
             if state.loading {
                 return div().size_full().flex().items_center().justify_center().child(super::spinner(cx)).into_any_element();
             }
+            if loc == DiffLocation::PullRequest {
+                return self.render_pr_placeholder(cx);
+            }
             return empty_state(Icon::Commit, "No commit selected", "Select a commit to see its details.", cx);
         };
+        let info = if loc == DiffLocation::PullRequest { self.render_pr_info(cx) } else { self.render_commit_info(loc, details, cx) };
         let split = self.details_split;
         let left = div()
             .h_full()
@@ -200,9 +218,12 @@ impl RepoView {
             .flex_col()
             .border_r_1()
             .border_color(theme.border_subtle)
-            .child(self.render_commit_info(loc, details, cx))
+            .child(info)
             .child(self.render_detail_files(loc, window, cx));
-        let diff = self.render_diff(loc, DiffMode::ReadOnly, self.detail_diff_toolbar(loc, cx), cx);
+        let diff = match self.pr_diff_unavailable(loc, cx) {
+            Some(notice) => notice,
+            None => self.render_diff(loc, DiffMode::ReadOnly, self.detail_diff_toolbar(loc, cx), cx),
+        };
         div()
             .id(("detail-split", loc as usize))
             .size_full()

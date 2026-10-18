@@ -27,6 +27,7 @@ pub enum DiffLocation {
     History,
     Stash,
     Reflog,
+    PullRequest,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -316,6 +317,7 @@ impl RepoView {
             DiffLocation::History => self.history.detail.diff.as_ref(),
             DiffLocation::Stash => self.stash_view.detail.diff.as_ref(),
             DiffLocation::Reflog => self.reflog.detail.diff.as_ref(),
+            DiffLocation::PullRequest => self.prs.detail.diff.as_ref(),
         }
     }
 
@@ -325,6 +327,7 @@ impl RepoView {
             DiffLocation::History => self.history.detail.diff.as_mut(),
             DiffLocation::Stash => self.stash_view.detail.diff.as_mut(),
             DiffLocation::Reflog => self.reflog.detail.diff.as_mut(),
+            DiffLocation::PullRequest => self.prs.detail.diff.as_mut(),
         }
     }
 

@@ -4,6 +4,7 @@
 mod actions;
 mod assets;
 mod git;
+mod github;
 mod repo;
 mod settings;
 mod settings_window;
@@ -65,6 +66,7 @@ fn main() {
                     MenuItem::action("New Branch…", NewBranch),
                     MenuItem::action("Merge…", MergeBranch),
                     MenuItem::action("Stash Changes…", StashChanges),
+                    MenuItem::action("Create Pull Request…", CreatePullRequest),
                     MenuItem::separator(),
                     MenuItem::action("Quick Actions…", QuickActions),
                     MenuItem::action("Refresh", Refresh),
@@ -77,6 +79,7 @@ fn main() {
                     MenuItem::action("History", ShowHistory),
                     MenuItem::action("Stashes", ShowStashes),
                     MenuItem::action("Reflog", ShowReflog),
+                    MenuItem::action("Pull Requests", ShowPullRequests),
                     MenuItem::separator(),
                     MenuItem::action("Toggle Theme", ToggleTheme),
                 ],

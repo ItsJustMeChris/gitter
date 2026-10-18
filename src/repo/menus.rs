@@ -111,7 +111,7 @@ impl RepoView {
             .item("Show File History", Some(Icon::History), self.handler(cx, move |this, window, cx| this.show_history_scope(LogScope::File(p1.clone()), window, cx)))
             .item_if(exists, "Blame", Some(Icon::User), self.handler(cx, move |this, window, cx| this.open_blame(p2.clone(), window, cx)))
             .item_if(exists, "Open File", Some(Icon::Reveal), self.handler(cx, move |this, _, cx| this.open_file(&p3, cx)));
-        if let Some(oid) = oid.filter(|_| loc != DiffLocation::Stash && f.status != FileStatus::Deleted) {
+        if let Some(oid) = oid.filter(|_| !matches!(loc, DiffLocation::Stash | DiffLocation::PullRequest) && f.status != FileStatus::Deleted) {
             let short = short_oid(&oid).to_string();
             menu = menu.item(format!("Restore File from {short}"), Some(Icon::Undo), self.handler(cx, move |this, _, cx| this.checkout_file_at(oid.clone(), f.clone(), cx)));
         }

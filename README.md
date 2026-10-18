@@ -33,6 +33,15 @@ written in Rust on top of [GPUI](https://gpui.rs), the GPU-accelerated UI framew
 - Tags: create (lightweight or annotated, optionally pushed), push, delete locally/remotely
 - Stashes: save (with message, untracked files, keep index), apply, pop, delete, and browse their contents
 
+**GitHub pull requests** (through the [GitHub CLI](https://cli.github.com); Gitter stores no tokens)
+- "Pull Requests" in the sidebar for repositories with a GitHub remote, with the open count
+- List of open, closed or all PRs: title, labels, draft state, branches, checks, review decision, author, last update
+- Select a PR to read its description, checks, reviews and labels, and browse its changed files with GitHub's diff
+- Check out a PR's branch (forks included; undoable), open it in the browser, copy its URL
+- Create a pull request for the current branch: title/description prefilled from its commits, base branch picker,
+  draft option; the branch is pushed first if it isn't on the remote yet
+- Clear guidance when `gh` isn't installed or signed in
+
 **Conflicts and in-progress operations**
 - Banner for merge/rebase/cherry-pick/revert in progress with Abort / Skip / Continue
 - Conflict view highlights "ours" and "theirs"; resolve with either side or mark as resolved
@@ -60,12 +69,15 @@ Gitter drives the `git` command-line tool for everything, the same approach Towe
 Git config, hooks, credential helpers, GPG signing, LFS and SSH setup out of the box, and supports every Git feature
 the CLI does. Read operations use machine-readable formats (`status --porcelain=v2 -z`, `for-each-ref`, custom `log`
 formats) and run with `GIT_OPTIONAL_LOCKS=0` so they never fight other Git processes. Line staging builds a partial patch
-and applies it with `git apply --cached`; history rewriting runs a scripted `git rebase -i`.
+and applies it with `git apply --cached`; history rewriting runs a scripted `git rebase -i`. GitHub features go through
+the `gh` CLI the same way (`gh pr list/view/diff --json`, `gh pr checkout`, `gh pr create`), so they use your existing
+`gh auth login`.
 
 ```
 src/
   git/         Git backend: command runner, parsers, commit-graph lanes, partial patches (unit + integration tests)
-  repo/        The repository view: toolbar, sidebar, history, working copy, diff, dialogs, palette, undo…
+  repo/        The repository view: toolbar, sidebar, history, working copy, diff, pull requests, dialogs, palette, undo…
+  github.rs    GitHub integration over the `gh` CLI: remote detection, PR queries, checkout, create
   ui/          Widgets: text input (IME, selection, undo, soft wrap), buttons, menus, icons
   workspace.rs Window root: title bar, tabs, repository manager, clone
   settings*.rs Persistent settings and the settings window
@@ -97,7 +109,7 @@ Run the tests with `cargo test`.
 | Shortcut | Action |
 |---|---|
 | Ctrl+K / Ctrl+Shift+A | Quick Actions |
-| Ctrl+1 / 2 / 3 / 4 | Working Copy / History / Stashes / Reflog |
+| Ctrl+1 / 2 / 3 / 4 / 5 | Working Copy / History / Stashes / Reflog / Pull Requests |
 | Ctrl+Enter | Commit |
 | Ctrl+Z | Undo the last operation |
 | Ctrl+Shift+F / L / P | Fetch / Pull / Push |
@@ -119,7 +131,8 @@ Run the tests with `cargo test`.
 
 - SSH keys protected by a passphrase need an SSH agent; Gitter can't show an interactive SSH prompt.
   HTTPS credentials work through your configured credential helper (e.g. Git Credential Manager).
-- No hosting-service integration (pull requests, issues) yet.
+- Hosting-service integration covers GitHub pull requests (via `gh`) only: no issues, reviewing or merging from Gitter
+  yet, and no GitLab/Bitbucket. Pull requests target the `upstream` remote when it points at GitHub, else `origin`.
 - History rewriting from the context menu works on linear history only (not across merge commits).
 - Built and tested on Windows so far. The code uses GPUI's cross-platform APIs and has macOS/Linux branches
   (title bar, terminal launching, window controls), but it hasn't been compiled or run on those systems yet.

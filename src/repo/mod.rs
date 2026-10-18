@@ -7,6 +7,7 @@ pub mod diff_view;
 pub mod history;
 pub mod menus;
 pub mod palette;
+pub mod pull_requests;
 pub mod sidebar;
 pub mod stashes;
 pub mod toolbar;
@@ -35,6 +36,7 @@ use std::time::Duration;
 pub use details::DetailState;
 pub use dialogs::Modal;
 pub use history::HistoryState;
+pub use pull_requests::PullRequestsState;
 pub use sidebar::SidebarState;
 pub use stashes::{ReflogState, StashViewState};
 pub use working_copy::WorkingCopyState;
@@ -45,6 +47,7 @@ pub enum Nav {
     History,
     Stashes,
     Reflog,
+    PullRequests,
     Blame(String),
 }
 
@@ -89,6 +92,7 @@ pub struct RepoView {
     pub wc: WorkingCopyState,
     pub stash_view: StashViewState,
     pub reflog: ReflogState,
+    pub prs: PullRequestsState,
     pub blame: Option<blame::BlameState>,
     pub modal: Option<Modal>,
     pub menu: Option<ContextMenu>,
@@ -139,6 +143,9 @@ impl RepoView {
         subscriptions.push(cx.observe_window_activation(window, |this, window, cx| {
             if window.is_window_active() {
                 this.refresh(cx);
+                if this.nav == Nav::PullRequests {
+                    this.reload_pull_requests_if_stale(cx);
+                }
             }
         }));
 
@@ -157,6 +164,7 @@ impl RepoView {
             wc: WorkingCopyState::new(subject, body, cx),
             stash_view: StashViewState::new(cx),
             reflog: ReflogState::new(cx),
+            prs: PullRequestsState::new(cx),
             blame: None,
             modal: None,
             menu: None,
@@ -268,6 +276,7 @@ impl RepoView {
         if state_changed || first {
             self.prefill_merge_message(cx);
         }
+        self.sync_github_repo(cx);
         self.validate_wc_selection(cx);
         cx.emit(RepoEvent::TitleChanged);
         cx.notify();
@@ -547,6 +556,10 @@ impl RepoView {
             Nav::Stashes => self.validate_stash_selection(cx),
             Nav::History => window.focus(&self.history.list_focus),
             Nav::WorkingCopy => window.focus(&self.wc.list_focus),
+            Nav::PullRequests => {
+                window.focus(&self.prs.list_focus);
+                self.on_show_pull_requests(cx);
+            }
             _ => {}
         }
         cx.notify();
@@ -739,6 +752,9 @@ impl RepoView {
     fn register_actions(&self, el: gpui::Div, cx: &mut Context<Self>) -> gpui::Div {
         el.on_action(cx.listener(|this, _: &Refresh, _, cx| {
             this.refresh(cx);
+            if this.nav == Nav::PullRequests {
+                this.refresh_pull_requests(cx);
+            }
             this.toast(ToastKind::Info, "Refreshed", None, cx);
         }))
         .on_action(cx.listener(|this, _: &Fetch, _, cx| this.fetch(None, cx)))
@@ -754,6 +770,8 @@ impl RepoView {
         .on_action(cx.listener(|this, _: &ShowHistory, window, cx| this.set_nav(Nav::History, window, cx)))
         .on_action(cx.listener(|this, _: &ShowStashes, window, cx| this.set_nav(Nav::Stashes, window, cx)))
         .on_action(cx.listener(|this, _: &ShowReflog, window, cx| this.set_nav(Nav::Reflog, window, cx)))
+        .on_action(cx.listener(|this, _: &ShowPullRequests, window, cx| this.set_nav(Nav::PullRequests, window, cx)))
+        .on_action(cx.listener(|this, _: &CreatePullRequest, window, cx| this.open_create_pull_request(window, cx)))
         .on_action(cx.listener(|this, _: &FocusSearch, window, cx| {
             this.set_nav(Nav::History, window, cx);
             let search = this.history.search.clone();
@@ -924,6 +942,7 @@ impl RepoView {
             Nav::History => self.render_history(window, cx).into_any_element(),
             Nav::Stashes => self.render_stashes(window, cx).into_any_element(),
             Nav::Reflog => self.render_reflog(window, cx).into_any_element(),
+            Nav::PullRequests => self.render_pull_requests(window, cx).into_any_element(),
             Nav::Blame(_) => self.render_blame(window, cx).into_any_element(),
         }
     }
