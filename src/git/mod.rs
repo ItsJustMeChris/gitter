@@ -5,6 +5,7 @@
 //! credential helpers and SSH setup, and it covers every porcelain feature.
 
 pub mod graph;
+pub mod images;
 pub mod parse;
 pub mod patch;
 
@@ -466,7 +467,9 @@ impl Repo {
         args.push(file.path.clone());
         let refs: Vec<&str> = args.iter().map(|s| s.as_str()).collect();
         let out = self.read_bytes(&refs)?;
-        Ok(parse_diff(&out).into_iter().next().unwrap_or_else(|| FileDiff::empty(&file.path)))
+        let mut diff = parse_diff(&out).into_iter().next().unwrap_or_else(|| FileDiff::empty(&file.path));
+        diff.images = self.commit_images(oid, parent, file);
+        Ok(diff)
     }
 
     pub fn stash_file_diff(&self, stash: &Stash, file: &ChangedFile) -> Result<FileDiff> {
@@ -480,6 +483,12 @@ impl Repo {
 
     /// Diff of a working copy file. `staged` selects index-vs-HEAD instead of worktree-vs-index.
     pub fn working_diff(&self, entry: &StatusEntry, staged: bool, context: u32) -> Result<FileDiff> {
+        let mut diff = self.working_text_diff(entry, staged, context)?;
+        diff.images = self.working_images(entry, staged);
+        Ok(diff)
+    }
+
+    fn working_text_diff(&self, entry: &StatusEntry, staged: bool, context: u32) -> Result<FileDiff> {
         let ctx = format!("-U{context}");
         if !staged && entry.status == FileStatus::Untracked {
             return self.untracked_diff(&entry.path);

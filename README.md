@@ -46,7 +46,7 @@ written in Rust on top of [GPUI](https://gpui.rs), the GPU-accelerated UI framew
 - Quick Actions palette (<kbd>Ctrl/⌘</kbd>+<kbd>K</kbd>) with fuzzy search over commands and branches
 - Reflog browser, blame view, submodules (open, update)
 - Auto-refresh via a file system watcher and on window focus; optional background auto-fetch
-- Inline word-level diff highlighting
+- Inline or side-by-side diffs with word-level highlighting, and before/after previews for changed images
 - Dark and light themes, adjustable font size, settings window (global Git identity, pull strategy, diff context)
 - Custom title bar with native window controls on Windows, traffic lights on macOS
 

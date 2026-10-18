@@ -28,6 +28,8 @@ pub struct Settings {
     pub pull_rebase: bool,
     pub git_path: Option<String>,
     pub diff_context: u32,
+    /// Show diffs as old/new columns instead of a single unified column.
+    pub diff_side_by_side: bool,
     pub auto_fetch_minutes: u32,
     pub clone_directory: Option<PathBuf>,
     pub show_all_branches: bool,
@@ -47,6 +49,7 @@ impl Default for Settings {
             pull_rebase: false,
             git_path: None,
             diff_context: 3,
+            diff_side_by_side: false,
             auto_fetch_minutes: 10,
             clone_directory: None,
             show_all_branches: true,

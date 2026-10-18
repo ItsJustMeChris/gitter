@@ -340,6 +340,8 @@ pub struct FileDiff {
     pub deleted: bool,
     /// The file has unresolved conflict markers; removed lines are "ours" and added lines "theirs".
     pub conflict: bool,
+    /// Old and new versions of an image file, for a visual diff.
+    pub images: Option<super::images::ImageVersions>,
 }
 
 impl FileDiff {
